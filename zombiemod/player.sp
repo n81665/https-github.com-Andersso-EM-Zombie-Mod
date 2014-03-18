@@ -57,6 +57,7 @@ public OnClientPutInServer(client)
 	g_ClientInfo[client][ClientInfo_IsCritial] =
 	g_ClientInfo[client][ClientInfo_SelectedClass] =
 	g_ClientInfo[client][ClientInfo_HasCustomClass] =
+	g_ClientInfo[client][ClientInfo_HasEquipped] =
 	g_ClientInfo[client][ClientInfo_ShouldAutoEquip] = false;
 	// TODO: Let these convars be changed while g_bModActive == true and restored otherwise 
 	if (!IsClientVIP(client) && !IsFakeClient(client))
@@ -503,6 +504,7 @@ public Action:OnWeaponCanUse(client, weapon)
 {
 	if (g_bModActive && g_ClientInfo[client][ClientInfo_WeaponCanUse])
 	{
+		/*
 		decl String:className[MAX_WEAPON_LENGTH];
 		GetEdictClassname(weapon, className, sizeof(className));
 		new clientTeam = GetClientTeam(client);
@@ -524,8 +526,13 @@ public Action:OnWeaponCanUse(client, weapon)
 				}
 			}
 		}
-		else if (clientTeam == Team_Axis)
+		else if (clientTeam == Team_Axis)*/
+		
+		if (GetClientTeam(client) == Team_Axis)
 		{
+			decl String:className[MAX_WEAPON_LENGTH];
+			GetEdictClassname(weapon, className, sizeof(className));
+		
 			static const String:allowedZombieWeapons[][] =
 			{
 				"spade",
