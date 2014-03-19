@@ -454,7 +454,7 @@ public Action:Timer_RestartRound(Handle:timer)
 					// This prevents the players from committing suicide
 					SetPlayerState(i, PlayerState_ObserverMode);
 
-					g_ClientInfo[client][ClientInfo_HasEquipped] = false;
+					g_ClientInfo[i][ClientInfo_HasEquipped] = false;
 
 					ChangeClientTeam(i, Team_Allies);
 				}
