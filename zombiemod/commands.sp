@@ -41,20 +41,26 @@ ShowTimeleft()
 	ZM_PrintToChatAll("Rounds played: %i of %i before map-change.", g_iRoundWins, g_ConVars[ConVar_WinLimit][Value_Int]);
 }
 
-public Action:OnClientSayCommand(client, const String:command[], const String:sArgs[])
+bool:CheckCommand(const String:text[], startIndex, const String:command[])
 {
-	decl String:text[13];
-	Format(text, sizeof(text), sArgs); // strcopy is evil
-	StripQuotes(text);
+	return StrEqual(text[startIndex], command, false) || StrEqual(text[startIndex + 1], command, false);
+}
 
-	if (StrEqual(text,    "timeleft", false)
-	||  StrEqual(text[1], "timeleft", false))
+public Action:OnClientSayCommand(client, const String:command[], const String:args[])
+{
+	decl String:text[192];	
+	if (strcopy(text, sizeof(text), args) < 1)
+	{
+		return Plugin_Continue;
+	}
+	
+	new startIndex = text[0] == '"';
+
+	if (CheckCommand(text, startIndex, "timeleft"))
 	{
 		ShowTimeleft();
 	}
-	else if (GetClientTeam(client) == Team_Allies
-	&& (StrEqual(text[1], "equipmenu", false)
-	|| StrEqual(text,     "equipmenu", false)))
+	else if (client && GetClientTeam(client) == Team_Allies && CheckCommand(text, startIndex, "equipmenu"))
 	{
 		g_ClientInfo[client][ClientInfo_ShouldAutoEquip] = false;
 

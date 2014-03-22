@@ -165,7 +165,7 @@ public Action:Timer_CreateRoundTimer(Handle:timer)
 
 public Event_RoundActive(Handle:event, String:name[], bool:dontBroadcast)
 {
-	if (g_bModActive)
+	if (g_bModActive && !g_bWhiteListed[WhiteList_Objectives])
 	{
 		ResumeTimer(g_iRoundTimer);
 
@@ -455,6 +455,13 @@ public Action:Timer_RestartRound(Handle:timer)
 					SetPlayerState(i, PlayerState_ObserverMode);
 
 					g_ClientInfo[i][ClientInfo_HasEquipped] = false;
+
+
+					new playerClass = GetDesiredPlayerClass(i);
+					if ((!IsClientVIP(i) && IsPlayerClassRestricted(playerClass)) || playerClass == PlayerClass_Random)
+					{
+						SetDesiredPlayerClass(i, PlayerClass_Assault);
+					}
 
 					ChangeClientTeam(i, Team_Allies);
 				}

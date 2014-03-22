@@ -1,0 +1,15 @@
+"Games"
+{
+	"#default"
+	{
+		"Signatures"
+		{
+			"EmitSound"
+			{
+				"library"	"server"
+				"windows"	"\x55\x8B\xEC\x81\xEC\x88\x00\x00\x00\xA1\x2A\x2A\x2A\x2A\x53"
+				"linux"		"@_ZN11CBaseEntity9EmitSoundEPKcfPf"
+			}
+		}
+	}
+}

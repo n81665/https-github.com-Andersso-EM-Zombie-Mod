@@ -51,26 +51,28 @@ new	bool:g_bModActive,
 
 enum ClientInfo
 {
-	ClientInfo_KillsAsHuman,         // Total number of kills the player has as human.
-	ClientInfo_KillsAsZombie,        // Total number of kills the player has as zombie.
+	ClientInfo_KillsAsHuman,         // Total number of kills as human
+	ClientInfo_KillsAsZombie,        // Total number of kills as zombie
 
-	bool:ClientInfo_IsCritial,       // True if zombie is critical (only has 2 hp), false otherwise
-	bool:ClientInfo_SniperCrit,      // True if zombie was critted by a sniper, false otherwise (duh)
-	ClientInfo_Critter,              // Userid of the attacker that scored the crirital hit on the player.
+	bool:ClientInfo_GermanSkin,       // True if player should wear the axis player skin
+	
+	bool:ClientInfo_IsCritial,       // True if player is critical
+	bool:ClientInfo_SniperCrit,      // True if player is critical from a sniper
+	ClientInfo_Critter,              // The user-id of the player who scored the critical hit
 
-	bool:ClientInfo_SelectedClass,   // True if player has selected a player class, false otherwise.
+	bool:ClientInfo_SelectedClass,   // True if player has selected a player-class
 
-	ClientInfo_Pistol,               // The type of pistol the player has.
-	ClientInfo_PrimaryWeapon,        // The type of primary wepaon the player has.
-	ClientInfo_EquipmentItem,        // The type of equipment item the player has.
-	bool:ClientInfo_HasCustomClass,  // True if the player has created a custom class, false otherwise.
-	bool:ClientInfo_HasEquipped,     // True if the player has equipped once during the current round.
-	bool:ClientInfo_ShouldAutoEquip, // True if the player has chosen to auto-equip with the custom class.
+	ClientInfo_Pistol,               // Selected pistol
+	ClientInfo_PrimaryWeapon,        // Selected primary weapon
+	ClientInfo_EquipmentItem,        // Selected equipment item
+	bool:ClientInfo_HasCustomClass,  // True if the player has created a custom class
+	bool:ClientInfo_HasEquipped,     // True if the player has equipped once during the current round
+	bool:ClientInfo_ShouldAutoEquip, // True if the player has chosen to auto-equip with the custom class
 
-	Float:ClientInfo_DamageScale,    // The value that the damaged done to the player should be scaled down to.
-	Float:ClientInfo_Health,         // The amount of health relative to the damage scale.
+	Float:ClientInfo_DamageScale,    // The value that the damaged done to the player should be scaled down to
+	Float:ClientInfo_Health,         // The amount of health relative to the damage scale
 
-	bool:ClientInfo_WeaponCanUse     // If true the WeaponCanUse() hook will run, false otherwise.
+	bool:ClientInfo_WeaponCanUse     // If true the WeaponCanUse() hook will run
 };
 
 new	g_ClientInfo[DOD_MAXPLAYERS + 1][ClientInfo];

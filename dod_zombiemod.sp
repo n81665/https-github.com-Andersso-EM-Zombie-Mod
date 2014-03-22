@@ -44,6 +44,7 @@
 #include "zombiemod/globals.sp"
 #include "zombiemod/util.sp"
 #include "zombiemod/offsets.sp"
+#include "zombiemod/sdkcalls.sp"
 #include "zombiemod/convars.sp"
 #include "zombiemod/config.sp"
 #include "zombiemod/gamerules.sp"
@@ -61,10 +62,10 @@ public Plugin:myinfo =
 	url         = "http://www.dodsplugins.com/"
 };
 
-
 public OnPluginStart()
 {
 	InitOffsets();
+	InitSDKCalls();
 	InitConVars();
 	InitEquipMenu();
 	InitPlayers();

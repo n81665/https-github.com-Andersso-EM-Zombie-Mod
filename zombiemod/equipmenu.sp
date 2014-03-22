@@ -108,10 +108,7 @@ InitEquipMenu()
 #if defined _SENDPROXYMANAGER_INC_
 	AddMenuItem(g_EquipMenu[Menu_Main], NULL_STRING, "Equip Custom Class\n \n");
 	// The class selection menu is not functional while the team index hack is active
-	if (g_bUseSendProxy)
-	{
-		AddMenuItem(g_EquipMenu[Menu_Main], NULL_STRING, "Open Class Selection Menu");
-	}
+	AddMenuItem(g_EquipMenu[Menu_Main], NULL_STRING, "Open Class Selection Menu");
 #else
 	AddMenuItem(g_EquipMenu[Menu_Main], NULL_STRING, "Equip Custom Class");
 #endif
@@ -215,7 +212,7 @@ public Handler_Main(Handle:menu, MenuAction:menuAction, client, param)
 
 					case Menu_Main_ClassSelection:
 					{
-						ShowVGUIPanel(client, "class_us");
+						ShowClassSelectionMenu(client);
 					}
 				}
 			}

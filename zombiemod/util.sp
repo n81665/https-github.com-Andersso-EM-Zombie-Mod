@@ -231,3 +231,8 @@ bool:IsPlayerClassRestricted(playerClass)
 {
 	return playerClass == PlayerClass_Sniper || (playerClass == PlayerClass_Machinegunner && IsMachineGunnerClassFull()) || playerClass == PlayerClass_Rocket;
 }
+
+ShowClassSelectionMenu(client)
+{
+	ShowVGUIPanel(client, "class_us");
+}

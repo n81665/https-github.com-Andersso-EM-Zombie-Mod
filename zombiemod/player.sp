@@ -44,6 +44,7 @@ public OnClientPutInServer(client)
 	SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	SDKHook(client, SDKHook_ShouldCollide, OnShouldCollide);
+
 #if defined _SENDPROXYMANAGER_INC_
 	if (g_bUseSendProxy)
 	{
@@ -59,6 +60,7 @@ public OnClientPutInServer(client)
 	g_ClientInfo[client][ClientInfo_HasCustomClass] =
 	g_ClientInfo[client][ClientInfo_HasEquipped] =
 	g_ClientInfo[client][ClientInfo_ShouldAutoEquip] = false;
+
 	// TODO: Let these convars be changed while g_bModActive == true and restored otherwise 
 	if (!IsClientVIP(client) && !IsFakeClient(client))
 	{
@@ -76,10 +78,12 @@ public OnClientPutInServer(client)
 		{
 			alliesRocketLimit = FindConVar("mp_limit_allies_rocket");
 		}
+
 		SendConVarValue(client, alliesSniperLimit, "0");
 		SendConVarValue(client, alliesMgLimit, "1");
 		SendConVarValue(client, alliesRocketLimit, "0");
 	}
+
 	EmitSoundToClient(client, g_szSounds[Sound_JoinServer]);
 }
 
@@ -178,8 +182,7 @@ public Event_PlayerSpawn(Handle:event, String:name[], bool:dontBroadcast)
 
 						new playerClass = GetPlayerClass(client);
 
-						if (playerClass == PlayerClass_Rifleman
-						|| playerClass  == PlayerClass_Support)
+						if (playerClass == PlayerClass_Rifleman || playerClass == PlayerClass_Support)
 						{
 							GivePlayerItem(client, "weapon_colt");
 						}
@@ -212,9 +215,19 @@ public Event_PlayerSpawn(Handle:event, String:name[], bool:dontBroadcast)
 
 						SetWeaponAmmo(client, Ammo_Colt, ExtraAmmoColt);
 					}
+
 					if (IsClientAdmin(client))
 					{
 						SetPlayerModel(client, Model_Human_Admin);
+					}
+					else if (IsClientVIP(client))
+					{
+						g_ClientInfo[client][ClientInfo_GermanSkin] = true;
+						SetEntityModel(client, "models/german/german_assault.mdl");
+					}
+					else
+					{
+						g_ClientInfo[client][ClientInfo_GermanSkin] = false;
 					}
 				}
 				case Team_Axis:
@@ -342,6 +355,7 @@ public Action:Event_PlayerTeam(Handle:event, String:name[], bool:dontBroadcast)
 	}
 }
 
+// TODO: Bazooka, grenade knockback, smoke: fire?, german vip, riflegren bug
 public Event_PlayerDamage(Handle:event, String:name[], bool:dontBrodcast)
 {
 	if (g_bModActive)
@@ -351,57 +365,73 @@ public Event_PlayerDamage(Handle:event, String:name[], bool:dontBrodcast)
 		new attackerUserId = GetEventInt(event, "attacker");
 		new attacker = GetClientOfUserId(attackerUserId);
 
-		if (GetClientTeam(client) == Team_Axis && attacker
-		&& !g_ClientInfo[client][ClientInfo_IsCritial]
-		&& GetEventInt(event, "hitgroup") == 1)
+		if (GetClientTeam(client) == Team_Axis && attacker && !g_ClientInfo[client][ClientInfo_IsCritial])
 		{
-			new weaponId = GetEventInt(event, "weapon");
-			switch (weaponId)
+			new weaponId = GetEventInt(event, "weapon"), bool:critical = false;
+
+			if (weaponId == WeaponID_Bazooka || weaponId == WeaponID_Pschreck)
 			{
-				case
-					WeaponID_AmerKnife,
-					WeaponID_Colt,
-					WeaponID_P38,
-					WeaponID_Spring,
-					WeaponID_Spring_Zoomed,
-					WeaponID_K98_Scoped,
-					WeaponID_K98_Scoped_Zoomed,
-					WeaponID_Bazooka,
-					WeaponID_Pschreck,
-					WeaponID_Thompson_Punch,
-					WeaponID_MP40_Punch:
+				critical = true;
+			}
+			else if (GetEventInt(event, "hitgroup") == 1)
+			{
+				switch (weaponId)
 				{
-					// Don't change this, when a players health is 1 the game sometimes fucks up and the players view-offset drops down to the floor, like if you were a crushed midget.
-					// Plus, the health bar looks bad.
-					SetEntityHealth(client, 2);
-					g_ClientInfo[client][ClientInfo_Health] = FloatMul(g_ClientInfo[client][ClientInfo_DamageScale], 2.0);
-
-					g_ClientInfo[client][ClientInfo_Critter] = attackerUserId;
-					g_ClientInfo[client][ClientInfo_IsCritial] = true;
-					if (!g_ClientInfo[client][ClientInfo_SniperCrit] && (weaponId == WeaponID_Spring || weaponId == WeaponID_Spring_Zoomed || weaponId == WeaponID_K98_Scoped || weaponId == WeaponID_K98_Scoped_Zoomed))
+					case
+						WeaponID_AmerKnife,
+						WeaponID_Spade,
+						WeaponID_Colt,
+						WeaponID_P38,
+						WeaponID_Spring,
+						WeaponID_Spring_Zoomed,
+						WeaponID_K98_Scoped,
+						WeaponID_K98_Scoped_Zoomed,
+						WeaponID_Thompson_Punch,
+						WeaponID_MP40_Punch:
 					{
-						SetPlayerLaggedMovementValue(client, GetPlayerLaggedMovementValue(client) * g_ConVars[ConVar_Zombie_SniperCritSpeed][Value_Float]);
-						g_ClientInfo[client][ClientInfo_SniperCrit] = true;
-						ZM_PrintToChat(attacker, "You can no longer hurt this zombie with your sniper"); // TODO: better text
+						critical = true;
 					}
-					decl Float:vecVelocity[3], Float:vecClientEyePos[3], Float:vecAttackerEyePos[3];
-
-					GetClientEyePosition(client, vecClientEyePos);
-					GetClientEyePosition(attacker, vecAttackerEyePos);
-
-					MakeVectorFromPoints(vecAttackerEyePos, vecClientEyePos, vecVelocity);
-					NormalizeVector(vecVelocity, vecVelocity);
-					ScaleVector(vecVelocity, 400.0);
-
-					PopHelmet(client, vecVelocity, vecClientEyePos);
-
-					PlaySoundFromPlayer(client, g_szSounds[Sound_ZombieCritical]);
-
-					EmitSoundToClient(attacker, g_szSounds[Sound_FinishHim]);
-					PrintCenterText(attacker, "FINISH HIM!");
-
-					ZM_PrintToChat(client, "You got hit by a fatal shot, take cover!");
+					default:
+					{
+						return;
+					}
 				}
+			}
+
+			if (critical)
+			{
+				// Don't change this, when a players health is 1 the game sometimes fucks up and the players view-offset drops down to the floor, like if you were a crushed midget.
+				// Plus, the health bar looks bad.
+				SetEntityHealth(client, 2);
+				g_ClientInfo[client][ClientInfo_Health] = FloatMul(g_ClientInfo[client][ClientInfo_DamageScale], 2.0);
+
+				g_ClientInfo[client][ClientInfo_Critter] = attackerUserId;
+				g_ClientInfo[client][ClientInfo_IsCritial] = true;
+
+				// TODO: check LMV instead?
+				if (!g_ClientInfo[client][ClientInfo_SniperCrit] && (weaponId == WeaponID_Spring || weaponId == WeaponID_Spring_Zoomed || weaponId == WeaponID_K98_Scoped || weaponId == WeaponID_K98_Scoped_Zoomed))
+				{
+					SetPlayerLaggedMovementValue(client, GetPlayerLaggedMovementValue(client) * g_ConVars[ConVar_Zombie_SniperCritSpeed][Value_Float]);
+					g_ClientInfo[client][ClientInfo_SniperCrit] = true;
+					//ZM_PrintToChat(attacker, "You can no longer hurt this zombie with your sniper"); // TODO: better text
+				}
+				decl Float:vecVelocity[3], Float:vecClientEyePos[3], Float:vecAttackerEyePos[3];
+
+				GetClientEyePosition(client, vecClientEyePos);
+				GetClientEyePosition(attacker, vecAttackerEyePos);
+
+				MakeVectorFromPoints(vecAttackerEyePos, vecClientEyePos, vecVelocity);
+				NormalizeVector(vecVelocity, vecVelocity);
+				ScaleVector(vecVelocity, 400.0);
+
+				PopHelmet(client, vecVelocity, vecClientEyePos);
+
+				PlaySoundFromPlayer(client, g_szSounds[Sound_ZombieCritical]);
+
+				EmitSoundToClient(attacker, g_szSounds[Sound_FinishHim]);
+				PrintCenterText(attacker, "FINISH HIM!");
+
+				ZM_PrintToChat(client, "You got hit by a fatal shot, take cover!");
 			}
 		}
 	}
@@ -452,6 +482,7 @@ public Action:OnEnterPlayerState(client, &playerState)
 	if (g_bModActive && playerState == PlayerState_PickingClass)
 	{
 		new playerClass = GetDesiredPlayerClass(client), bool:changeClass = false;
+
 		// This prevents the class selection menu to pop up on all team changes.
 		// It is however displayed once for allied players, allowing them to decide witch class to.
 		if (GetClientTeam(client) == Team_Allies)
@@ -459,14 +490,17 @@ public Action:OnEnterPlayerState(client, &playerState)
 			if (!g_ClientInfo[client][ClientInfo_SelectedClass])
 			{
 				g_ClientInfo[client][ClientInfo_SelectedClass] = true;
-				return Plugin_Continue;
+				ShowClassSelectionMenu(client);
 			}
+
 			changeClass = playerClass == PlayerClass_Random || IsPlayerClassRestricted(playerClass);
 		}
+
 		if (playerClass == PlayerClass_None || changeClass)
 		{
 			SetDesiredPlayerClass(client, PlayerClass_Assault);
 		}
+
 		playerState = PlayerState_ObserverMode;
 		return Plugin_Changed;
 	}
@@ -475,8 +509,85 @@ public Action:OnEnterPlayerState(client, &playerState)
 
 public Action:OnVoiceCommand(client, &voiceCommand)
 {
-	// Block zombies from making voice commands.
-	return g_bModActive && GetClientTeam(client) == Team_Axis ? Plugin_Handled : Plugin_Continue;
+	static const String:voiceSounds[][] =
+	{
+		"Go",
+		"Hold",
+		"FlankLeft",
+		"FlankRight",
+		"StickTogether",
+		"CoveringFire",
+		"UseSmoke",
+		"UseGrenades",
+		"CeaseFire",
+		"YesSir",
+		"Negative",
+		"Backup",
+		"FireInHole",
+		"Grenade",
+		"Sniper",
+		"NiceShot",
+		"Thanks",
+		"Clear",
+		"DropWeapons",
+		"Displace",
+		"MgAhead",
+		"BehindUs",
+		"WeGotHim",
+		"MoveUpMg",
+		"NeedAmmo",
+		"UseRocket",
+		"RocketSpotted",
+		"ObjectivesAttack",
+		"Medic",
+		"CoverFlanks",
+		"TankAhead",
+		"TakeAmmo",
+		"MoveWithtank",
+		"WhiskeyTangoFoxtrot",
+		"TakingFireLeft",
+		"TakingFireRight",
+		"", // To keep array indexes right
+		"EnemyAhead",
+		"FallBack"
+	};
+
+	if (g_bModActive && GetClientTeam(client) == Team_Allies && g_ClientInfo[client][ClientInfo_GermanSkin])
+	{
+		new Float:gameTime = GetGameTime();
+
+		static Float:lastCommand[DOD_MAXPLAYERS + 1];
+
+		if (GetGameTime() - lastCommand[client] > 1.0)
+		{
+			decl String:soundName[64];
+			Format(soundName, sizeof(soundName), "Voice.German_%s", voiceSounds[voiceCommand]);
+			SDKCall(g_hSDKCall_EmitSound, client, soundName, 0.0, 0);
+
+			TE_Start("PlayerAnimEvent");
+
+			TE_WriteNum("m_hPlayer", EntIndexToEntRef(client) & 0x7FFFFFFF);
+			TE_WriteNum("m_iEvent", 6);
+			TE_WriteNum("m_nData", 0);
+
+			TE_SendToAll();
+
+			new Handle:bf = StartMessageAll("VoiceSubtitle");
+			if (bf != INVALID_HANDLE)
+			{
+				BfWriteByte(bf, 1);
+				BfWriteByte(bf, Team_Allies);
+				BfWriteByte(bf, voiceCommand);
+				EndMessage();
+			}
+
+			lastCommand[client] = gameTime;
+			
+			return Plugin_Handled;
+		}
+	}
+
+	return Plugin_Continue;
 }
 
 public Action:OnPlayerRespawn(client)
@@ -489,9 +600,7 @@ public Action:OnNormalSoundPlayed(clients[64], &numClients, String:sample[PLATFO
 	if (g_bModActive && entity && entity <= MaxClients)
 	{
 		// Block all german pain and round start sounds.
-		if (GetClientTeam(entity) == Team_Axis
-		&& (StrContains(sample, "pain", false) != -1
-		|| StrContains(sample, "player/german/startround", false) != -1))
+		if (GetClientTeam(entity) == Team_Axis && (StrContains(sample, "pain", false) != -1 || StrContains(sample, "player/german/startround", false) != -1))
 		{
 			return Plugin_Stop;
 		}
@@ -527,20 +636,23 @@ public Action:OnWeaponCanUse(client, weapon)
 			}
 		}
 		else if (clientTeam == Team_Axis)*/
-		
+
 		if (GetClientTeam(client) == Team_Axis)
 		{
 			decl String:className[MAX_WEAPON_LENGTH];
 			GetEdictClassname(weapon, className, sizeof(className));
-		
+
 			static const String:allowedZombieWeapons[][] =
 			{
 				"spade",
+				"frag_us",
+				"frag_ger",
 				"frag_us_live",
 				"frag_ger_live",
 				"riflegren_us_live",
 				"riflegren_ger_live"
 			};
+
 			for (new i; i < sizeof(allowedZombieWeapons); i++)
 			{
 				if (StrEqual(className[7], allowedZombieWeapons[i])) // Skip the first 7 characters in className to avoid comparing the "weapon_" prefix.
@@ -560,8 +672,32 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 {
 	if (g_bModActive)
 	{
-		if (attacker && attacker < MaxClients && GetClientTeam(client) == Team_Axis)
+		if (inflictor >= MaxClients && damageType & DMG_BLAST)
 		{
+			decl String:className[MAX_WEAPON_LENGTH];
+			GetEdictClassname(inflictor, className, sizeof(className));
+
+			PrintToServer(className);
+
+			if (StrContains(className, "grenade") == 0)
+			{
+				decl Float:vecGrenadeOrigin[3], Float:vecClientOrigin[3], Float:vecVelocity[3];
+
+				GetEntDataVector(inflictor, g_iOffset_Origin, vecGrenadeOrigin);
+				GetClientEyePosition(client, vecClientOrigin);
+
+				MakeVectorFromPoints(vecGrenadeOrigin, vecClientOrigin, vecVelocity);
+
+				new Float:length = NormalizeVector(vecVelocity, vecVelocity);
+				ScaleVector(vecVelocity, 500.0 * (50 / length));
+
+				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vecVelocity);
+			}
+		}
+
+		if (attacker >= 1 && attacker < MaxClients && GetClientTeam(client) == Team_Axis)
+		{
+			/*
 			new activeWeapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon"); //TODO: get global offset instead, or find way to do this properly with weapon-id
 			if (activeWeapon != -1)
 			{
@@ -571,7 +707,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				{
 					return Plugin_Handled;
 				}
-			}
+			}*/
 			if (IsInZombieSpawn(client))
 			{
 				PrintHintText(attacker, "You cannot hurt zombies while they are in spawn!");
