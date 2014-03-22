@@ -109,8 +109,6 @@ new	bool:g_bWhiteListed[WhiteList_Size];
 
 LoadConfig()
 {
-	PrecacheSound("Voice.US_Clear");
-
 	decl String:path[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, path, sizeof(path), "configs/zombiemod.cfg");
 

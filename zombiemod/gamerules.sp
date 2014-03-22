@@ -456,7 +456,6 @@ public Action:Timer_RestartRound(Handle:timer)
 
 					g_ClientInfo[i][ClientInfo_HasEquipped] = false;
 
-
 					new playerClass = GetDesiredPlayerClass(i);
 					if ((!IsClientVIP(i) && IsPlayerClassRestricted(playerClass)) || playerClass == PlayerClass_Random)
 					{

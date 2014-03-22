@@ -223,7 +223,7 @@ public Event_PlayerSpawn(Handle:event, String:name[], bool:dontBroadcast)
 					else if (IsClientVIP(client))
 					{
 						g_ClientInfo[client][ClientInfo_GermanSkin] = true;
-						SetEntityModel(client, "models/german/german_assault.mdl");
+						SetEntityModel(client, "models/player/german_assault.mdl");
 					}
 					else
 					{
@@ -371,7 +371,7 @@ public Event_PlayerDamage(Handle:event, String:name[], bool:dontBrodcast)
 
 			if (weaponId == WeaponID_Bazooka || weaponId == WeaponID_Pschreck)
 			{
-				critical = true;
+				//critical = true;
 			}
 			else if (GetEventInt(event, "hitgroup") == 1)
 			{
@@ -552,37 +552,47 @@ public Action:OnVoiceCommand(client, &voiceCommand)
 		"FallBack"
 	};
 
-	if (g_bModActive && GetClientTeam(client) == Team_Allies && g_ClientInfo[client][ClientInfo_GermanSkin])
+	if (g_bModActive)
 	{
-		new Float:gameTime = GetGameTime();
-
-		static Float:lastCommand[DOD_MAXPLAYERS + 1];
-
-		if (GetGameTime() - lastCommand[client] > 1.0)
+		if (GetClientTeam(client) == Team_Allies)
 		{
-			decl String:soundName[64];
-			Format(soundName, sizeof(soundName), "Voice.German_%s", voiceSounds[voiceCommand]);
-			SDKCall(g_hSDKCall_EmitSound, client, soundName, 0.0, 0);
-
-			TE_Start("PlayerAnimEvent");
-
-			TE_WriteNum("m_hPlayer", EntIndexToEntRef(client) & 0x7FFFFFFF);
-			TE_WriteNum("m_iEvent", 6);
-			TE_WriteNum("m_nData", 0);
-
-			TE_SendToAll();
-
-			new Handle:bf = StartMessageAll("VoiceSubtitle");
-			if (bf != INVALID_HANDLE)
+			if (g_ClientInfo[client][ClientInfo_GermanSkin])
 			{
-				BfWriteByte(bf, 1);
-				BfWriteByte(bf, Team_Allies);
-				BfWriteByte(bf, voiceCommand);
-				EndMessage();
-			}
+				new Float:gameTime = GetGameTime();
 
-			lastCommand[client] = gameTime;
-			
+				static Float:lastCommand[DOD_MAXPLAYERS + 1];
+
+				if (GetGameTime() - lastCommand[client] > 1.0)
+				{
+					decl String:soundName[64];
+					Format(soundName, sizeof(soundName), "Voice.German_%s", voiceSounds[voiceCommand]);
+					SDKCall(g_hSDKCall_EmitSound, client, soundName, 0.0, 0);
+
+					TE_Start("PlayerAnimEvent");
+
+					TE_WriteNum("m_hPlayer", EntIndexToEntRef(client) & 0x7FFFFFFF);
+					TE_WriteNum("m_iEvent", 6);
+					TE_WriteNum("m_nData", 0);
+
+					TE_SendToAll();
+
+					new Handle:bf = StartMessageAll("VoiceSubtitle");
+					if (bf != INVALID_HANDLE)
+					{
+						BfWriteByte(bf, 1);
+						BfWriteByte(bf, Team_Allies);
+						BfWriteByte(bf, voiceCommand);
+						EndMessage();
+					}
+
+					lastCommand[client] = gameTime;
+				}
+
+				return Plugin_Handled;
+			}
+		}
+		else
+		{
 			return Plugin_Handled;
 		}
 	}
@@ -672,29 +682,6 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 {
 	if (g_bModActive)
 	{
-		if (inflictor >= MaxClients && damageType & DMG_BLAST)
-		{
-			decl String:className[MAX_WEAPON_LENGTH];
-			GetEdictClassname(inflictor, className, sizeof(className));
-
-			PrintToServer(className);
-
-			if (StrContains(className, "grenade") == 0)
-			{
-				decl Float:vecGrenadeOrigin[3], Float:vecClientOrigin[3], Float:vecVelocity[3];
-
-				GetEntDataVector(inflictor, g_iOffset_Origin, vecGrenadeOrigin);
-				GetClientEyePosition(client, vecClientOrigin);
-
-				MakeVectorFromPoints(vecGrenadeOrigin, vecClientOrigin, vecVelocity);
-
-				new Float:length = NormalizeVector(vecVelocity, vecVelocity);
-				ScaleVector(vecVelocity, 500.0 * (50 / length));
-
-				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vecVelocity);
-			}
-		}
-
 		if (attacker >= 1 && attacker < MaxClients && GetClientTeam(client) == Team_Axis)
 		{
 			/*
@@ -714,8 +701,35 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 
 				return Plugin_Handled;
 			}
-		}
 
+			if (inflictor >= MaxClients && damageType & DMG_BLAST)
+			{
+				decl String:className[MAX_WEAPON_LENGTH];
+				GetEdictClassname(inflictor, className, sizeof(className));		
+				
+				if (StrContains(className, "grenade") == 0)
+				{
+					damage = 1500.0;
+				}
+				else if (StrContains(className, "rocket") == 0)
+				{
+					damage = 2700.0;
+				}
+				
+				decl Float:vecGrenadeOrigin[3], Float:vecClientOrigin[3], Float:vecVelocity[3];
+
+				GetEntDataVector(inflictor, g_iOffset_Origin, vecGrenadeOrigin);
+				GetClientEyePosition(client, vecClientOrigin);
+
+				MakeVectorFromPoints(vecGrenadeOrigin, vecClientOrigin, vecVelocity);
+
+				new Float:length = NormalizeVector(vecVelocity, vecVelocity);
+				ScaleVector(vecVelocity, 500.0 * (50 / length));
+
+				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vecVelocity);
+			}
+		}
+		
 		if (g_ClientInfo[client][ClientInfo_DamageScale] != 1.0)
 		{
 			static damageAccumulatorOffset;
@@ -725,6 +739,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				LogError("Error: Failed to obtain offset: \"m_flDamageAccumulator\"!");
 				return Plugin_Continue;
 			}
+
 			damage *= g_ClientInfo[client][ClientInfo_DamageScale];
 
 			new Float:newHealth = g_ClientInfo[client][ClientInfo_Health] - damage;

@@ -79,11 +79,9 @@ RemoveScreenOverlay(client)
 
 RemoveWeapons(client)
 {
-	for (new i; i < Slot_Size; i++)
+	for (new i, weapon; i < Slot_Size; i++)
 	{
-		new weapon = GetPlayerWeaponSlot(client, i);
-
-		if (weapon != INVALID_WEAPON)
+		if ((weapon = GetPlayerWeaponSlot(client, i)) != INVALID_WEAPON)
 		{
 			RemovePlayerItem(client, weapon);
 			AcceptEntityInput(weapon, "Kill");
@@ -197,11 +195,12 @@ SelectZombie()
 	CloseHandle(prioritizedArray);
 }
 
+// TODO: add to clientinfo
 IsClientAdmin(client)
 {
 	new AdminId:adminId = GetUserAdmin(client);
 
-	return adminId != INVALID_ADMIN_ID && GetAdminFlag(adminId, Admin_Kick);
+	return adminId != INVALID_ADMIN_ID && GetAdminFlag(adminId, Admin_Custom2);
 }
 
 IsClientVIP(client)
